@@ -1,0 +1,6 @@
+black
+black[jupyter]
+jupyter
+jupyterlab
+ipython
+ipykernel
