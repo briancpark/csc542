@@ -29,6 +29,6 @@ jobs:
           for f in *.ipynb
           do
               echo "Running Notebook $f"
-              jupyter nbconvert --execute --to notebook --inplace $f
+              jupyter nbconvert --execute --to notebook --inplace "$f"
           done
 
