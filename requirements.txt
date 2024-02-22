@@ -6,3 +6,4 @@ ipython
 ipykernel
 numpy
 matplotlib
+scikit-learn
