@@ -1,0 +1,3 @@
+[submodule "proj/final"]
+	path = proj/final
+	url = git@github.com:briancpark/csc542-project.git
