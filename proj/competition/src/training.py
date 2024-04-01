@@ -6,13 +6,14 @@ import torch
 from torch import nn
 from torch.utils.data import TensorDataset, DataLoader
 from tqdm import tqdm
+from torch.optim.lr_scheduler import StepLR
 
 
 def training(epochs=10, batch_size=32, lr=1e-5):
     device = torch.device(
         "mps"
         if torch.backends.mps.is_available()
-        else "cuda" if torch.cuda.is_available() else "cpu"
+        else "cuda:1" if torch.cuda.is_available() else "cpu"
     )
 
     if device.type == "cuda":
@@ -40,7 +41,7 @@ def training(epochs=10, batch_size=32, lr=1e-5):
 
     # Specifying some parameters for the feature extraction
     timeStep = 1
-    winSz = 2
+    winSz = 50
 
     # Specifying IDs for training and validation sets
     valIDs = [2, 11, 25]
@@ -55,12 +56,22 @@ def training(epochs=10, batch_size=32, lr=1e-5):
 
     # Define the loss function and the optimizer
     criterion = nn.CrossEntropyLoss()
+    # Define the optimizer
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
+    # optimizer = torch.optim.Adadelta(
+    # model.parameters(), lr=0.1, rho=0.9, eps=1e-3, weight_decay=0.001
+    # )
+    # every 10000 epochs
+    milestones = [x for x in range(0, epochs, 10000)]
+    # scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones, gamma=0.1)
+    # Define the scheduler
+    # scheduler = StepLR(optimizer, step_size=10, gamma=0.1)
+
     # Convert numpy arrays to PyTorch tensors
-    xTrain, yTrain = torch.from_numpy(xTrain).float().to(device), torch.from_numpy(
+    xTrain, yTrain = torch.from_numpy(xTrain).to(dtype).to(device), torch.from_numpy(
         yTrain
     ).long().to(device)
-    xVal, yVal = torch.from_numpy(xVal).float().to(device), torch.from_numpy(
+    xVal, yVal = torch.from_numpy(xVal).to(dtype).to(device), torch.from_numpy(
         yVal
     ).long().to(device)
 
@@ -75,8 +86,10 @@ def training(epochs=10, batch_size=32, lr=1e-5):
     print(xTrain.shape, yTrain.shape)
     print(xVal.shape, yVal.shape)
 
+    pbar_epochs = tqdm(range(epochs), desc="Epochs")
+    pbar_accuracy = tqdm(desc="Accuracy", leave=False)
     # Training loop
-    for epoch in tqdm(range(epochs)):
+    for epoch in pbar_epochs:
         model.train()  # Set the model to training mode
 
         # Forward pass
@@ -88,20 +101,33 @@ def training(epochs=10, batch_size=32, lr=1e-5):
         loss.backward()
         optimizer.step()
 
+        # Step the scheduler
+        # scheduler.step()
+
         # Validation
         model.eval()  # Set the model to evaluation mode
         with torch.no_grad():
-            outputs = model(xVal)
-            val_loss = criterion(outputs, yVal)
-            _, predicted = torch.max(outputs.data, 1)
-            total = yVal.size(0)
-            correct = (predicted == yVal).sum().item()
-            tqdm.write(f"Validation Accuracy: {100 * correct / total}%")
+            if epoch % 50 == 0:
+                outputs = model(xVal)
+                val_loss = criterion(outputs, yVal)
+                _, predicted = torch.max(outputs.data, 1)
+                total = yVal.size(0)
+                correct = (predicted == yVal).sum().item()
+                val_accuracy = 100 * correct / total
+
+                # also validate training set
+                outputs = model(xTrain)
+                _, predicted = torch.max(outputs.data, 1)
+                total = yTrain.size(0)
+                correct = (predicted == yTrain).sum().item()
+                train_accuracy = 100 * correct / total
+
+                pbar_accuracy.set_postfix(
+                    {"train_accuracy": train_accuracy, "val_accuracy": val_accuracy}
+                )
 
         # Print loss for this epoch
-        tqdm.write(
-            f"Epoch {epoch+1}/{epochs}, Loss: {loss.item()}, Validation Loss: {val_loss.item()}"
-        )
+        pbar_epochs.set_postfix({"loss": loss.item(), "val_loss": val_loss.item()})
 
     # validate
     model.eval()
