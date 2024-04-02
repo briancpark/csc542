@@ -73,19 +73,23 @@ from torch.nn import functional as F
 class ConvNet(nn.Module):
     def __init__(self):
         super(ConvNet, self).__init__()
-        self.conv1 = nn.Conv1d(12, 128, kernel_size=3, stride=1, padding=1)
+        self.conv1 = nn.Conv1d(12, 6, kernel_size=3, stride=1, padding=1)
         self.relu1 = nn.ReLU()
         self.pool1 = nn.MaxPool1d(kernel_size=1, stride=1)
 
-        self.conv2 = nn.Conv1d(128, 256, kernel_size=3, stride=1, padding=1)
+        self.conv2 = nn.Conv1d(6, 4, kernel_size=3, stride=1, padding=1)
         self.relu2 = nn.ReLU()
         self.pool2 = nn.MaxPool1d(kernel_size=1, stride=1)
 
-        self.fc1 = nn.Linear(256, 256)
-        self.fc2 = nn.Linear(256, 4)
+        # self.conv3 = nn.Conv1d(256, 256, kernel_size=3, stride=1, padding=1)
+        # self.relu3 = nn.ReLU()
+        # self.pool3 = nn.MaxPool1d(kernel_size=1, stride=1)
+
+        # self.fc1 = nn.Linear(256, 256)
+        self.fc2 = nn.Linear(4, 4)
 
         # Apply Xavier initialization to the weights of the linear layers
-        nn.init.xavier_uniform_(self.fc1.weight)
+        # nn.init.xavier_uniform_(self.fc1.weight)
         nn.init.xavier_uniform_(self.fc2.weight)
 
         # init conv1d weights with xavier as well
@@ -96,7 +100,53 @@ class ConvNet(nn.Module):
         x = x.view(x.size(0), 12, -1)  # Reshape the input tensor
         x = self.pool1(self.relu1(self.conv1(x)))
         x = self.pool2(self.relu2(self.conv2(x)))
+        # x = self.pool3(self.relu3(self.conv3(x)))
         x = x.view(x.size(0), -1)  # Flatten the tensor
-        x = F.relu(self.fc1(x))
+        # x = F.relu(self.fc1(x))
         x = self.fc2(x)
         return x
+
+
+# class ConvNet(nn.Module):
+#     def __init__(self):
+#         super(ConvNet, self).__init__()
+
+#         # Convolutional layers
+#         self.conv1 = nn.Conv1d(6, 32, kernel_size=5, padding=2)
+#         self.conv2 = nn.Conv1d(32, 64, kernel_size=5, padding=2)
+#         self.conv3 = nn.Conv1d(64, 128, kernel_size=5, padding=2)
+
+#         # Pooling layers
+#         self.pool1 = nn.MaxPool1d(kernel_size=2)
+#         self.pool2 = nn.MaxPool1d(kernel_size=2)
+#         self.pool3 = nn.MaxPool1d(kernel_size=2)
+
+#         # Fully connected layers
+#         self.fc1 = nn.Linear(128 * 12, 256)
+#         self.fc2 = nn.Linear(256, 128)
+#         self.fc3 = nn.Linear(128, 4)  # Output for 4 classes
+
+#         # Activation functions
+#         self.relu = nn.ReLU()
+
+#     def forward(self, x):
+#         # Reshape input to (batch_size, 6, sequence_length)
+#         x = x.view(x.size(0), 6, -1)
+
+#         # Convolutional layers
+#         x = self.relu(self.conv1(x))
+#         x = self.pool1(x)
+#         x = self.relu(self.conv2(x))
+#         x = self.pool2(x)
+#         x = self.relu(self.conv3(x))
+#         x = self.pool3(x)
+
+#         # Flatten for fully connected layers
+#         x = x.view(x.size(0), -1)
+
+#         # Fully connected layers
+#         x = self.relu(self.fc1(x))
+#         x = self.relu(self.fc2(x))
+#         x = self.fc3(x)
+
+#         return x

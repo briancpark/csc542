@@ -13,7 +13,7 @@ def training(epochs=10, batch_size=32, lr=1e-5):
     device = torch.device(
         "mps"
         if torch.backends.mps.is_available()
-        else "cuda:1" if torch.cuda.is_available() else "cpu"
+        else "cuda" if torch.cuda.is_available() else "cpu"
     )
 
     if device.type == "cuda":
@@ -40,8 +40,8 @@ def training(epochs=10, batch_size=32, lr=1e-5):
     dirTrain = "data/train/"
 
     # Specifying some parameters for the feature extraction
-    timeStep = 1
-    winSz = 50
+    timeStep = 10
+    winSz = 100
 
     # Specifying IDs for training and validation sets
     valIDs = [2, 11, 25]
@@ -65,7 +65,7 @@ def training(epochs=10, batch_size=32, lr=1e-5):
     milestones = [x for x in range(0, epochs, 10000)]
     # scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones, gamma=0.1)
     # Define the scheduler
-    # scheduler = StepLR(optimizer, step_size=10, gamma=0.1)
+    scheduler = StepLR(optimizer, step_size=10, gamma=0.1)
 
     # Convert numpy arrays to PyTorch tensors
     xTrain, yTrain = torch.from_numpy(xTrain).to(dtype).to(device), torch.from_numpy(
@@ -102,7 +102,7 @@ def training(epochs=10, batch_size=32, lr=1e-5):
         optimizer.step()
 
         # Step the scheduler
-        # scheduler.step()
+        scheduler.step()
 
         # Validation
         model.eval()  # Set the model to evaluation mode
