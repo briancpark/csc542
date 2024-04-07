@@ -126,6 +126,7 @@ def training(epochs=10, batch_size=32, lr=1e-5, seed=42, window_size=120):
     # save model
     torch.save(model.state_dict(), "models/model.pth")
 
+    print(f"Train acc: {train_accuracy}, Val acc: {val_accuracy}")
     for i in tqdm(test_ids):
         test_data, _ = load_data(test_dir, [i], window_size=window_size, testing=True)
         xTest = torch.from_numpy(test_data).to(dtype).to(device)

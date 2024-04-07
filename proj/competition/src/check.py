@@ -31,7 +31,7 @@ def check_submission_format():
     # Checking the 'v' values.
     for k in range(len(yPred)):
         assert len(yPred[k]["v"]) == y_len[k]
-        
+
         # Extracting the proportions of your predicitions
         n0 = np.sum(yPred[k]["v"] == 0)
         n1 = np.sum(yPred[k]["v"] == 1)

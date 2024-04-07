@@ -24,7 +24,7 @@ if device.type == "cuda":
         dtype = torch.bfloat16
     else:
         dtype = torch.float16
-    dtype = torch.float32  # TODO
+    dtype = torch.float32
 elif device.type == "mps":
     command = 'sysctl -a | grep "hw.optional.arm.FEAT_BF16"'
     process = subprocess.Popen(command, stdout=subprocess.PIPE, shell=True)
@@ -100,15 +100,12 @@ def load_data(dir, ids, window_size=32, testing=False):
 
     data = data_dfs.drop(columns=["label"]).values
     labels = data_dfs["label"].values
-    print(data.shape)
     n_samples = data.shape[0]
     n_features = 6
 
     # reshape data
     window_size += 1
     n_slices = n_samples - window_size
-    print(data.shape)
-    print(n_slices, n_features, window_size)
     data_slices = np.zeros((n_slices, n_features, window_size))
     for i in range(n_slices):
         data_slices[i] = data[i : i + window_size].T
