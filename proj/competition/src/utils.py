@@ -1,11 +1,16 @@
-import numpy as np
-import importlib
-import src.fncs as fncs
-import matplotlib.pyplot as plt
-import random
-import pandas as pd
+"""Utility functions for training and evaluation"""
+
+import subprocess
 import torch
+import numpy as np
+import pandas as pd
 from tqdm import tqdm
+import src.fncs as fncs
+
+# import matplotlib.pyplot as plt
+
+
+# pylint: disable=invalid-name
 
 ### Always import device to register correct backend
 device = torch.device(
@@ -27,8 +32,8 @@ if device.type == "cuda":
     dtype = torch.float32
 elif device.type == "mps":
     command = 'sysctl -a | grep "hw.optional.arm.FEAT_BF16"'
-    process = subprocess.Popen(command, stdout=subprocess.PIPE, shell=True)
-    output, error = process.communicate()
+    with subprocess.Popen(command, stdout=subprocess.PIPE, shell=True) as process:
+        output, error = process.communicate()
 
     if output.decode("utf-8").strip().endswith("1"):
         dtype = torch.bfloat16
@@ -40,6 +45,7 @@ else:
 
 
 def save_predictions(test_preds, id):
+    """Save predictions to the correct file"""
     label_df = pd.read_csv(
         f"data/test/Trial{id:02d}_y.csv", names=["timestamp", "label"]
     )
@@ -64,6 +70,7 @@ def save_predictions(test_preds, id):
 
 
 def load_data(dir, ids, window_size=32, testing=False):
+    """Load data from the given directory and ids"""
     data_dfs = []
     for id in tqdm(ids):
         data_df = pd.read_csv(
@@ -118,6 +125,7 @@ def load_data(dir, ids, window_size=32, testing=False):
 
 
 def evaluate(model, data_loader):
+    """Evaluate the model on the given data_loader"""
     total = 0
     correct = 0
     with torch.no_grad():
@@ -132,6 +140,7 @@ def evaluate(model, data_loader):
 
 # It loads the data and extracts the features
 def loadFeatures(dataFolder, winSz, timeStep, idList):
+    """Load the features for the given id"""
     for k, id in tqdm(enumerate(idList)):
         # Loading the raw data
         xt, xv, yt, yv = fncs.loadTrial(dataFolder, id=id)

@@ -1,11 +1,13 @@
-import numpy as np
-from src.model import ConvNet
-import subprocess
+"""Training script"""
+
+import os
 import torch
+import numpy as np
 from torch import nn
 from torch.utils.data import TensorDataset, DataLoader
-from tqdm import tqdm
 from torch.optim.lr_scheduler import StepLR
+from tqdm import tqdm
+from src.model import ConvNet
 from src.utils import (
     device,
     dtype,
@@ -15,10 +17,12 @@ from src.utils import (
     evaluate,
     save_predictions,
 )
-import os
+
+# pylint: disable=invalid-name
 
 
 def training(epochs=10, batch_size=32, lr=1e-5, seed=42, window_size=120):
+    """Training loop"""
     # Specifying the data directory
     train_dir = "data/train/"
     test_dir = "data/test/"
@@ -74,7 +78,7 @@ def training(epochs=10, batch_size=32, lr=1e-5, seed=42, window_size=120):
     #     model.parameters(), lr=0.1, rho=0.9, eps=1e-3, weight_decay=0.001
     # )
     # every 10000 epochs
-    milestones = [x for x in range(0, epochs, 100)]
+    milestones = list(range(0, epochs, 100))
     scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones, gamma=0.1)
     # Define the scheduler
     # scheduler = StepLR(optimizer, step_size=10, gamma=0.1)

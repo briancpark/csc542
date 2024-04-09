@@ -1,10 +1,5 @@
-import numpy as np
-import importlib
-import src.fncs
-import matplotlib.pyplot as plt
-import random
+"""Main script for the competition."""
 import argparse
-
 from src.training import training
 from src.check import check_submission_format
 

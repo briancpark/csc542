@@ -1,5 +1,9 @@
+import torch
+import torch.nn as nn
 import numpy as np
+from torch.autograd import Variable
 from scipy import stats as st
+from collections import OrderedDict
 
 
 # This function loads the signal measusrementa and labels, and splits it into time and values.
@@ -84,20 +88,6 @@ def extractLabel(yt, yv, winSz, timeStart, timeEnd, timeStep):
     yList = np.array(yList)
 
     return tList, yList
-
-
-##########################################################################
-# The code below was taken from the following repo:
-# https://github.com/sksq96/pytorch-summary
-# It was included here to void having to install the package.
-##########################################################################
-
-import torch
-import torch.nn as nn
-from torch.autograd import Variable
-
-from collections import OrderedDict
-import numpy as np
 
 
 def summary(model, input_size, batch_size=-1, device=torch.device("cpu"), dtypes=None):

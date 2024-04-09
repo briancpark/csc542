@@ -1,25 +1,26 @@
+"""Check the submission format"""
+
 import numpy as np
-import importlib
 import src.fncs as fncs
-import random
 
 
 def check_submission_format():
+    """Check the submission format"""
     idTest = [1, 2, 3, 4]
     dataFolder = "data/test/"
 
     yPred = []
     for k, id in enumerate(idTest):
-        xt, xv, yt, yv = fncs.loadTrial(dataFolder, id=id)
+        _, _, yt, yv = fncs.loadTrial(dataFolder, id=id)
         yPred.append({"t": yt, "v": yv})
 
     y_t_start = [0.02, 0.02, 0.02, 0.02]
     y_t_end = [857.62, 861.82, 1203.42, 949.72]
     y_len = [8577, 8619, 12035, 9498]
 
-    # First checking that the 't' values looks good. If this fails then either the data was not loaded
-    # correctly or they were overwritten to be the incorrect values.
-    for k in range(len(yPred)):
+    # First checking that the 't' values looks good. If this fails then either the data
+    # was not loaded correctly or they were overwritten to be the incorrect values.
+    for k in enumerate(yPred):
         assert yPred[k]["t"][0] == y_t_start[k]
         assert yPred[k]["t"][-1] == y_t_end[k]
         assert len(yPred[k]["t"]) == y_len[k]
@@ -29,7 +30,7 @@ def check_submission_format():
     y_len = [8577, 8619, 12035, 9498]
 
     # Checking the 'v' values.
-    for k in range(len(yPred)):
+    for k in enumerate(yPred):
         assert len(yPred[k]["v"]) == y_len[k]
 
         # Extracting the proportions of your predicitions
