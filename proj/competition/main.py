@@ -1,4 +1,5 @@
 """Main script for the competition."""
+
 import argparse
 from src.training import training
 from src.check import check_submission_format
