@@ -3,11 +3,13 @@
 import subprocess
 import torch
 import numpy as np
+from scipy.fftpack import fft
 import pandas as pd
 from tqdm import tqdm
 import src.fncs as fncs
-
-# import matplotlib.pyplot as plt
+import sklearn.metrics as metrics
+from sklearn.metrics import accuracy_score, confusion_matrix, ConfusionMatrixDisplay
+import matplotlib.pyplot as plt
 
 
 # pylint: disable=invalid-name
@@ -72,6 +74,7 @@ def save_predictions(test_preds, id):
 def load_data(dir, ids, window_size=32, testing=False):
     """Load data from the given directory and ids"""
     data_dfs = []
+    value_counts = np.empty(4)
     for id in tqdm(ids):
         data_df = pd.read_csv(
             f"{dir}/Trial{id:02d}_x.csv".format(id),
@@ -80,15 +83,30 @@ def load_data(dir, ids, window_size=32, testing=False):
         label_df = pd.read_csv(
             f"{dir}/Trial{id:02d}_y.csv", names=["timestamp", "label"]
         )
+
+        # append value counts (in order of labels) to value_counts
+        val_cnt = label_df["label"].value_counts()
+        for i in range(4):
+            if i not in val_cnt.index:
+                val_cnt[i] = 0
+
+        # sort by label
+        value_counts = np.vstack(
+            (value_counts, val_cnt.sort_index().values / val_cnt.sum())
+        )
+        print(np.around(value_counts[-1], 2))
+
         # correct the timestamp
         if not testing:
             label_df["timestamp"] = label_df["timestamp"] - 0.02
-        # encode velocity into the features
 
-        # compute velocity based on acc and pos
-        # data_df["vel_x"] = data_df["acc_x"].diff()
-        # data_df["vel_y"] = data_df["acc_y"].diff()
-        # data_df["vel_z"] = data_df["acc_z"].diff()
+        # add a column for directional acc and pos, the vector magnitude
+        data_df["acc_mag"] = np.linalg.norm(
+            data_df[["acc_x", "acc_y", "acc_z"]], axis=1
+        )
+        data_df["pos_mag"] = np.linalg.norm(
+            data_df[["pos_x", "pos_y", "pos_z"]], axis=1
+        )
 
         # now merge based on timestamp (snap to nearest timestamp)
         # pad labels, as data is sampled higher
@@ -100,6 +118,29 @@ def load_data(dir, ids, window_size=32, testing=False):
     # we want to transform this into slices of window_size
     # such that the data shape eventually becomes (n_samples, n_features, window_size)
 
+    # data_dfs = data_dfs.drop(columns=["timestamp"])
+
+    # if not testing:
+    #     data_dfs = data_dfs.dropna()
+
+    # data = data_dfs.drop(columns=["label"]).values
+    # labels = data_dfs["label"].values
+    # n_samples = data.shape[0]
+    # n_features = 6
+
+    # # reshape data
+    # window_size += 1
+    # n_slices = n_samples - window_size
+    # data_slices = np.zeros((n_slices, n_features, window_size))
+    # for i in range(n_slices):
+    #     data_slices[i] = data[i : i + window_size].T
+
+    # # remove NaN
+    # data_slices = data_slices[~np.isnan(data_slices).any(axis=(1, 2))]
+    # data = data_slices[:, :, :-1]
+    # labels = labels[window_size:]
+    # return data, labels
+
     data_dfs = data_dfs.drop(columns=["timestamp"])
 
     if not testing:
@@ -108,20 +149,23 @@ def load_data(dir, ids, window_size=32, testing=False):
     data = data_dfs.drop(columns=["label"]).values
     labels = data_dfs["label"].values
     n_samples = data.shape[0]
-    n_features = 6
+    n_features = 8
 
     # reshape data
     window_size += 1
     n_slices = n_samples - window_size
     data_slices = np.zeros((n_slices, n_features, window_size))
+    fft_slices = np.zeros((n_slices, n_features, window_size))
     for i in range(n_slices):
         data_slices[i] = data[i : i + window_size].T
+        fft_slices[i] = np.abs(fft(data[i : i + window_size].T, axis=1))
 
     # remove NaN
     data_slices = data_slices[~np.isnan(data_slices).any(axis=(1, 2))]
-    data = data_slices[:, :, :-1]
+    fft_slices = fft_slices[~np.isnan(fft_slices).any(axis=(1, 2))]
+    data = np.concatenate((data_slices[:, :, :-1], fft_slices[:, :, :-1]), axis=1)
     labels = labels[window_size:]
-    return data, labels
+    return data, labels, value_counts[1:]
 
 
 def evaluate(model, data_loader):
@@ -136,6 +180,19 @@ def evaluate(model, data_loader):
             correct += (predicted == y).sum().item()
         accuracy = correct / total
     return accuracy
+
+
+def get_labels(model, data_loader):
+    """return the predicted labels and the true labels"""
+    y_true = []
+    y_pred = []
+    with torch.no_grad():
+        for x, y in data_loader:
+            outputs = model(x)
+            _, predicted = torch.max(outputs.data, 1)
+            y_true.extend(y.tolist())
+            y_pred.extend(predicted.tolist())
+    return y_true, y_pred
 
 
 # It loads the data and extracts the features
@@ -171,3 +228,21 @@ def allocated_memory():
     if device.type == "cuda":
         return torch.cuda.memory_reserved() / 1e9
     return float("nan")
+
+
+def summary_perf(yTrain, yTrainHat, y, yHat):
+    """This function produces a summary of performance metrics including a confusion matrix"""
+    # Plotting confusion matrix for the non-training set:
+    cm = metrics.confusion_matrix(y, yHat, normalize="true")
+    disp = metrics.ConfusionMatrixDisplay(
+        confusion_matrix=cm,
+        display_labels=["Walk Hard", "Down Stairs", "Up Stairs", "Walk Soft"],
+    )
+    cm_diag = np.diag(cm)
+    disp.plot()
+    plt.savefig("confusion_matrix.png")
+
+    train_bal_score = metrics.balanced_accuracy_score(yTrain, yTrainHat)
+    val_bal_score = metrics.balanced_accuracy_score(y, yHat)
+
+    return train_bal_score, val_bal_score, cm_diag

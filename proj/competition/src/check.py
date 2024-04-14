@@ -20,7 +20,7 @@ def check_submission_format():
 
     # First checking that the 't' values looks good. If this fails then either the data
     # was not loaded correctly or they were overwritten to be the incorrect values.
-    for k in enumerate(yPred):
+    for k in range(len(yPred)):
         assert yPred[k]["t"][0] == y_t_start[k]
         assert yPred[k]["t"][-1] == y_t_end[k]
         assert len(yPred[k]["t"]) == y_len[k]
@@ -30,7 +30,7 @@ def check_submission_format():
     y_len = [8577, 8619, 12035, 9498]
 
     # Checking the 'v' values.
-    for k in enumerate(yPred):
+    for k in range(len(yPred)):
         assert len(yPred[k]["v"]) == y_len[k]
 
         # Extracting the proportions of your predicitions
