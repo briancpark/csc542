@@ -1,15 +1,30 @@
+import torch
+import torch.nn as nn
 import numpy as np
+from torch.autograd import Variable
 from scipy import stats as st
+from collections import OrderedDict
 
 
 # This function loads the signal measusrementa and labels, and splits it into time and values.
-def loadTrial(dataFolder, id):
+def loadTrial(dataFolder, id, testing=False):
     x = np.genfromtxt("{}Trial{:02d}_x.csv".format(dataFolder, id), delimiter=",")
     xt = x[:, 0]
     xv = x[:, 1:]
-    y = np.genfromtxt("{}Trial{:02d}_y.csv".format(dataFolder, id), delimiter=",")
-    yt = y[:, 0]
-    yv = y[:, 1].astype(int)
+    if testing:
+        # placehodler of zero values
+        lens = {
+            1: 8577,
+            2: 8619,
+            3: 12035,
+            4: 9498,
+        }
+        yt = np.arange(0.02, lens[id] * 0.1 + 0.02, 0.1)
+        yv = np.zeros(lens[id])
+    else:
+        y = np.genfromtxt("{}Trial{:02d}_y.csv".format(dataFolder, id), delimiter=",")
+        yt = y[:, 0]
+        yv = y[:, 1].astype(int)
 
     # Returning x measurements and y labels
     return xt, xv, yt, yv
@@ -32,7 +47,6 @@ def extractFeat(xt, xv, winSz, timeStart, timeEnd, timeStep):
         xWin = xv[(xt >= t0) * (xt <= t1), :]
         f1 = np.mean(xWin, axis=0)
         f2 = np.std(xWin, axis=0)
-
         # Storing the features
         featList.append(np.concatenate((f1, f2)))
 
@@ -74,20 +88,6 @@ def extractLabel(yt, yv, winSz, timeStart, timeEnd, timeStep):
     yList = np.array(yList)
 
     return tList, yList
-
-
-##########################################################################
-# The code below was taken from the following repo:
-# https://github.com/sksq96/pytorch-summary
-# It was included here to void having to install the package.
-##########################################################################
-
-import torch
-import torch.nn as nn
-from torch.autograd import Variable
-
-from collections import OrderedDict
-import numpy as np
 
 
 def summary(model, input_size, batch_size=-1, device=torch.device("cpu"), dtypes=None):

@@ -1,0 +1,20 @@
+#!/bin/bash
+#SBATCH -N 1
+#SBATCH --cpus-per-task=16
+#SBATCH --tasks-per-node=1
+#SBATCH -p max
+#SBATCH -w c[20]
+#SBATCH -J ray-tuner
+#SBATCH -o ray-tuner.o%j
+#SBATCH -e ray-tuner.e%j
+
+
+source /home/bcpark/.bashrc
+module load cuda
+conda activate csc542
+
+cd /home/bcpark/csc542/proj/competition
+
+nvidia-smi
+
+python3 main.py
