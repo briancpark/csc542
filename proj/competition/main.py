@@ -11,7 +11,7 @@ if __name__ == "__main__":
     parser.add_argument("--lr", type=float, default=1e-4)
     parser.add_argument("--check", action="store_true")
     parser.add_argument("--seed", "-s", type=int, default=42)
-    parser.add_argument("--window-size", "-w", type=int, default=100)
+    parser.add_argument("--window-size", "-w", type=int, default=60)
     args = parser.parse_args()
 
     if args.check:

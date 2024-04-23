@@ -164,7 +164,9 @@ def load_data(dir, ids, window_size=32, testing=False):
     data_slices = data_slices[~np.isnan(data_slices).any(axis=(1, 2))]
     fft_slices = fft_slices[~np.isnan(fft_slices).any(axis=(1, 2))]
     data = np.concatenate((data_slices[:, :, :-1], fft_slices[:, :, :-1]), axis=1)
-    labels = labels[window_size:]
+    # labels = labels[window_size:]
+    # lables shoudl be centgered
+    labels = labels[window_size // 2 : -window_size // 2]
     return data, labels, value_counts[1:]
 
 
